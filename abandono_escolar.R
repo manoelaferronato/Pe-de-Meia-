@@ -3,13 +3,14 @@ library(PNADcIBGE)
 library(survey)
 library(tidyverse)
 library(dplyr)
+library(openxlsx)
 
 
 # Definindo diretório
 setwd("C:/Users/manuf/Desktop/EcoChallenge")
 
 # Anos que deseja processar
-anos <- c(2019, 2022, 2023)
+anos <- c(2019,2022,2023)
 
 # Lista para armazenar dados de cada trimestre
 dados_pnadc <- list()
@@ -179,34 +180,45 @@ pnadc_abandono_pdmpotencial <- subset(pnadc_abandono, (V2009 >= 14 & V2009 <= 24
 assign(paste0("total_1visita_", ano, "_", t), svytotal(~contagem, pnadc_1tri_1visita, na.rm = TRUE))
 assign(paste0("total_abandono_", ano, "_", t), svytotal(~contagem, pnadc_abandono, na.rm = TRUE))
 assign(paste0("total_abandono_serie_", ano, "_", t), svymean(~V3003A, pnadc_abandono, na.rm = TRUE))
-assign(paste0("total_abandono_pdm_", ano, "_", t), svytotal(~contagem, public_alvo, na.rm = TRUE))
-assign(paste0("total_abandono_pdm_serie_", ano, "_", t), svymean(~V3006, public_alvo, na.rm = TRUE))
-assign(paste0("total_abandono_pdmpotencial", ano, "_", t), svytotal(~contagem, public_potencial, na.rm = TRUE))
-assign(paste0("total_abandono_pdmpotencial_serie_", ano, "_", t), svymean(~V3006, public_potencial, na.rm = TRUE))
+assign(paste0("total_abandono_pdm_", ano, "_", t), svytotal(~contagem, pnadc_abandono_pdm, na.rm = TRUE))
+assign(paste0("total_abandono_pdm_serie_", ano, "_", t), svymean(~V3006, pnadc_abandono_pdm, na.rm = TRUE))
+assign(paste0("total_abandono_pdmpotencial_", ano, "_", t), svytotal(~contagem, pnadc_abandono_pdmpotencial, na.rm = TRUE))
+assign(paste0("total_abandono_pdmpotencial_serie_", ano, "_", t), svymean(~V3006, pnadc_abandono_pdmpotencial, na.rm = TRUE))
 
   }
   
 }
 
- # Salvar os resultados no Excel
+# Salvar os resultados no Excel
 wb <- createWorkbook()
 
+# Dicionário para abreviar os nomes das estatísticas
+abreviacoes <- list(
+  "total_1visita" = "1visita",
+  "total_abandono" = "aband",
+  "total_abandono_serie" = "aband_serie",
+  "total_abandono_pdm" = "aband_pdm",
+  "total_abandono_pdm_serie" = "aband_pdm_serie",
+  "total_abandono_pdmpotencial_serie" = "aband_pdm_pot_serie"
+)
+
 # Loop para salvar cada estatística em uma aba
-for (estat in c("total_1visita", "total_abandono", "total_abandono_serie",
-                "total_abandono_pdm", "total_abandono_pdm_serie",
-                "total_abandono_pdmpotencial", "total_abandono_pdmpotencial_serie")) {
-  
-  df <- data.frame()
+for (estat in names(abreviacoes)) {
   for (ano in anos) {
+    df <- data.frame()
+    
+    # Loop para coletar valores de cada trimestre
     for (t in 1:3) {
       var_name <- paste0(estat, "_", ano, "_", t)
       valor <- get(var_name)
       df <- rbind(df, data.frame(Ano = ano, Trimestre = t, Valor = valor))
     }
+    
+    # Nome único e abreviado para cada aba
+    sheet_name <- paste0(abreviacoes[[estat]], "_", ano)
+    addWorksheet(wb, sheet_name)
+    writeData(wb, sheet_name, df)
   }
-  
-  addWorksheet(wb, estat)
-  writeData(wb, estat, df)
 }
 
 # Salva o workbook
