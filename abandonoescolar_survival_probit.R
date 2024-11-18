@@ -1,3 +1,8 @@
+# Análise de Sobrevivência sobre o abandono escolar do público alvo 
+# plotando curva de Kaplan-Meier por série e 
+# estimando a regressão de Cox (Proportional Hazards) multivariada 
+# para analisar os efeitos de covariadas no risco de abandono. 
+
 # Carregando pacotes necessários
 library(PNADcIBGE)
 library(survey)
